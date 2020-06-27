@@ -80,10 +80,10 @@ class PerformanceViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(['GET'])
     def read(self, request):
-        p = helper.get_performance(request.query_params, request.user, self.party)
+        p = helper.get_performance(request.query_params, request.user)
         return Response(serializers.PerformanceSerializer(instance=p).data)
 
     @decorators.list_route(['POST'])
     def write(self, request):
-        p = helper.save_performance(request.data, request.user, self.party)
+        p = helper.save_performance(request.data, request.user)
         return Response(serializers.PerformanceSerializer(instance=p).data)
