@@ -23,7 +23,7 @@ class DailyLogViewSet(UserApiMixin, viewsets.ModelViewSet):
     def write(self, request):
         user = request.user
         for k, v in request.data.iteritems():
-            log, created = self.party.dailylog_dailylogs.get_or_create(user=user, the_date=k)
+            log, created = models.DailyLog.objects.get_or_create(user=user, the_date=k)
             log.context.update(v)
             log.save()
         return Response({'detail': 'success'})

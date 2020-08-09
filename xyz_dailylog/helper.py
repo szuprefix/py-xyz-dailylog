@@ -3,6 +3,8 @@
 from __future__ import unicode_literals
 from django.contrib.contenttypes.models import ContentType
 from . import models
+from logging import getLogger
+log = getLogger('django')
 
 def do_daily_stat(the_date):
     d = {}
@@ -35,8 +37,12 @@ def gen_dailylog_records(the_date):
             app, model, mid, category, metric = ps
             mt = "%s.%s" % (category, metric)
             ct = ContentType.objects.get_by_natural_key(app, model)
-            models.Record.objects.update_or_create(the_date=the_date, owner_type=ct, owner_id=mid, metics=mt, user=l.user,
-                                                      defaults=dict(value=v))
+            try:
+                models.Record.objects.update_or_create(the_date=the_date, owner_type=ct, owner_id=mid, metics=mt, user=l.user,
+                                                       defaults=dict(value=v))
+            except Exception, e:
+                import traceback
+                log.error('gen_dailylog_records(%s) error: %s', the_date, traceback.format_exc())
 
 
 def save_performance(d, user):
