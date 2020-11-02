@@ -70,6 +70,7 @@ class Performance(models.Model):
     class Meta:
         verbose_name_plural = verbose_name = "表现"
         ordering = ('-update_time',)
+        unique_together = ('owner_type', 'owner_id', 'user')
 
     owner_type = models.ForeignKey('contenttypes.ContentType', verbose_name='归类', null=True, blank=True,
                                    on_delete=models.PROTECT)
