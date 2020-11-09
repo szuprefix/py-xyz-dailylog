@@ -5,7 +5,7 @@ import sys
 
 setup(
     name="xyz-dailylog",
-    version="0.0.3",
+    version="0.0.4",
     author="szuprefix",
     author_email="szuprefix@126.com",
     description="dailylog",
@@ -16,7 +16,9 @@ setup(
     include_package_data=True,
     install_requires=[
         'django>=1.11.2',
-        'xyz-restful'
+        'xyz-restful>=0.0.6',
+        'xyz-util>=0.0.6',
+        'pymongo'
     ],
     classifiers=[
         "Environment :: Web Environment",

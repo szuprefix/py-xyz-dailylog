@@ -7,7 +7,7 @@ from rest_framework.response import Response
 __author__ = 'denishuang'
 from . import models, serializers,stats, helper
 from rest_framework import viewsets, decorators
-from xyz_restful.decorators import register
+from xyz_restful.decorators import register, register_raw
 
 
 @register()
@@ -87,3 +87,16 @@ class PerformanceViewSet(viewsets.ModelViewSet):
     def write(self, request):
         p = helper.save_performance(request.data, request.user)
         return Response(serializers.PerformanceSerializer(instance=p).data)
+
+@register_raw(path='dailylog/object')
+class ObjectViewSet(viewsets.ViewSet):
+
+    @decorators.action(['get'], detail={}, permission_classes=[])
+    def views(self, request):
+        model = request.query_params.get('model')
+        id = request.query_params.get('id')
+        from .stores import ObjectLog
+        ol = ObjectLog()
+        ol.log(model, id)
+        return Response({'detail': ol.query(model, id)})
+

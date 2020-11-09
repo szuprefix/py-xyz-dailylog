@@ -58,3 +58,12 @@ def get_performance(d, user):
     p, created = models.Performance.objects.get_or_create(user=user, owner_type=ct, owner_id=d['owner_id'], defaults={})
     return p
 
+
+def log_views(model, id):
+    try:
+        from .stores import ObjectLog
+        ol = ObjectLog()
+        ol.log(model, id)
+    except:
+        import traceback
+        log.error('dailylog log_views error: %s', traceback.format_exc())
