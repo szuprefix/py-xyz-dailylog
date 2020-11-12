@@ -5,8 +5,9 @@ from xyz_util.statutils import do_rest_stat_action, using_stats_db
 from rest_framework.response import Response
 
 __author__ = 'denishuang'
-from . import models, serializers,stats, helper
-from rest_framework import viewsets, decorators
+
+from . import models, serializers, stats, helper
+from rest_framework import viewsets, decorators, status
 from xyz_restful.decorators import register, register_raw
 
 
@@ -44,6 +45,7 @@ class StatViewSet(viewsets.ReadOnlyModelViewSet):
     def stat(self, request):
         return do_rest_stat_action(self, stats.stats_stat)
 
+
 @register()
 class RecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = using_stats_db(models.Record.objects.all())
@@ -53,15 +55,16 @@ class RecordViewSet(viewsets.ReadOnlyModelViewSet):
         'the_date': ['exact', 'gte', 'lte', 'range'],
         'metics': ['exact'],
         'owner_id': ['exact', 'isnull'],
-        'owner_type': ['exact',],
-        'user': ['exact',],
-        'user_group': ['exact',],
-        'owner_group': ['exact',]
+        'owner_type': ['exact', ],
+        'user': ['exact', ],
+        'user_group': ['exact', ],
+        'owner_group': ['exact', ]
     }
 
     @decorators.list_route(['get'])
     def stat(self, request):
         return do_rest_stat_action(self, stats.stats_record)
+
 
 @register()
 class PerformanceViewSet(viewsets.ModelViewSet):
@@ -71,10 +74,10 @@ class PerformanceViewSet(viewsets.ModelViewSet):
         'id': ['in', 'exact'],
         'update_time': ['exact', 'gte', 'lte', 'range'],
         'owner_id': ['exact', 'isnull', 'in'],
-        'owner_type': ['exact',],
-        'user': ['exact',],
-        'user_group': ['exact',],
-        'owner_group': ['exact',]
+        'owner_type': ['exact', ],
+        'user': ['exact', ],
+        'user_group': ['exact', ],
+        'owner_group': ['exact', ]
     }
     search_fields = ['owner_name', 'user_name', 'user_group', 'owner_group']
 
@@ -88,15 +91,22 @@ class PerformanceViewSet(viewsets.ModelViewSet):
         p = helper.save_performance(request.data, request.user)
         return Response(serializers.PerformanceSerializer(instance=p).data)
 
+
 @register_raw(path='dailylog/object')
 class ObjectViewSet(viewsets.ViewSet):
 
-    @decorators.action(['get'], detail={}, permission_classes=[])
+    @decorators.action(['get', 'post'], detail={}, permission_classes=[])
     def views(self, request):
-        model = request.query_params.get('model')
-        id = request.query_params.get('id')
         from .stores import ObjectLog
         ol = ObjectLog()
-        ol.log(model, id)
-        return Response({'detail': ol.query(model, id)})
-
+        if request.method == 'POST':
+            model = request.data.get('model')
+            id = request.data.get('id')
+            ol.log(model, id)
+            return Response({'detail': 'ok'}, status=status.HTTP_201_CREATED)
+        else:
+            model = request.query_params.get('model')
+            ids = [int(a.strip()) for a in request.query_params.get('ids').split(',') if a.strip()]
+            cs = ol.find(model, ids)
+            d = dict([(a['_id'], a['count']) for a in cs])
+            return Response({'detail': d})

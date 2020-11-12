@@ -10,9 +10,7 @@ class ObjectLog(Store):
     timeout = 1000
 
     def log(self, model, id, action='views'):
-        key = '%s:%s' % (id, model)
-        self.inc({'model': key}, {action: 1})
+        self.inc({'model': model, 'id': int(id)}, {action: 1})
 
-    def query(self, model, id, prejection={'_id': False, 'object': True, 'views': True}):
-        key = '%s:%s' % (id, model)
-        return self.collection.find_one({'model': key}, prejection)
+    def find(self, model, ids, action='views'):
+        return self.collection.find({'model': model, 'id': {'$in': ids}}, {'_id': '$id', 'count': '$' + action})
