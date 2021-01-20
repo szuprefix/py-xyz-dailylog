@@ -58,10 +58,14 @@ class Record(models.Model):
 
 
     def save(self, **kwargs):
-        self.user_name = self.user.get_full_name()
-        self.user_group = unicode(self.user.as_school_student.classes.first()) if hasattr(self.user, 'as_school_student') else ''
-        self.owner_name = unicode(self.owner)
-        self.owner_group = unicode(self.owner.owner) if hasattr(self.owner, 'owner') else ''
+        if not self.user_name:
+            self.user_name = self.user.get_full_name()
+        if not self.user_group:
+            self.user_group = unicode(self.user.as_school_student.classes.first()) if hasattr(self.user, 'as_school_student') else ''
+        if not self.owner_name:
+            self.owner_name = unicode(self.owner)
+        if not self.owner_group:
+            self.owner_group = unicode(self.owner.owner) if hasattr(self.owner, 'owner') else ''
         return super(Record, self).save(**kwargs)
 
 

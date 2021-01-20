@@ -5,7 +5,7 @@ from . import models
 from django.db.models import Count, Sum, Max
 from xyz_util import statutils
 
-def stats_stat(qset=None, measures=None, period=None):
+def stats_stat(qset=None, measures=None, period=None, time_field=None):
     qset = qset if qset is not None else models.Stat.objects.all()
     qset = statutils.using_stats_db(qset)
     dstat = statutils.DateStat(qset, 'the_date')
@@ -15,7 +15,7 @@ def stats_stat(qset=None, measures=None, period=None):
     return dict([(m, funcs[m]()) for m in measures])
 
 
-def stats_record(qset=None, measures=None, period=None):
+def stats_record(qset=None, measures=None, period=None, time_field=None):
     qset = qset if qset is not None else models.Record.objects.all()
     qset = statutils.using_stats_db(qset)
     dstat = statutils.DateStat(qset, 'the_date')
