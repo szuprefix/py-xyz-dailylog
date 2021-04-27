@@ -110,3 +110,20 @@ class ObjectViewSet(viewsets.ViewSet):
             cs = ol.find(model, ids)
             d = dict([(a['_id'], a['count']) for a in cs])
             return Response({'detail': d})
+
+
+@register_raw(path='dailylog/user')
+class UserCounterSet(viewsets.ViewSet):
+
+    @decorators.action(['get', 'post'], detail={}, permission_classes=[])
+    def count(self, request):
+        from .stores import UserLog
+        ul = UserLog()
+        if request.method == 'POST':
+            ds = request.data
+            r = ul.log(request.user.id, metics=ds.get('metics'), delta=ds.get('delta', 1))
+            return Response({'detail': r}, status=status.HTTP_201_CREATED)
+        else:
+            qs = request.query_params
+            mt = qs.get('metics')
+            return Response({mt: ul.get(request.user.id, metics=mt)})

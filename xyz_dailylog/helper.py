@@ -34,6 +34,8 @@ def gen_dailylog_records(the_date):
     for l in models.DailyLog.objects.filter(the_date=the_date):
         for k, v in l.context.iteritems():
             ps = k.split('.')
+            if len(ps) != 5:
+                continue
             app, model, mid, category, metric = ps
             mt = "%s.%s" % (category, metric)
             ct = ContentType.objects.get_by_natural_key(app, model)
