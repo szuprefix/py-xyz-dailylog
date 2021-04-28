@@ -117,6 +117,9 @@ class UserCounterSet(viewsets.ViewSet):
 
     @decorators.action(['get', 'post'], detail={}, permission_classes=[])
     def count(self, request):
+        uid = request.user.id
+        if not uid:
+            return Response({'detail': 0})
         from .stores import UserLog
         ul = UserLog()
         if request.method == 'POST':
