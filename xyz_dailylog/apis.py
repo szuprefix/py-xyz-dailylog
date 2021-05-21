@@ -95,7 +95,7 @@ class PerformanceViewSet(viewsets.ModelViewSet):
 @register_raw(path='dailylog/object')
 class ObjectViewSet(viewsets.ViewSet):
 
-    @decorators.action(['get', 'post'], detail={}, permission_classes=[])
+    @decorators.action(['get', 'post'], detail=False, permission_classes=[])
     def views(self, request):
         from .stores import ObjectLog
         ol = ObjectLog()
@@ -111,11 +111,34 @@ class ObjectViewSet(viewsets.ViewSet):
             d = dict([(a['_id'], a['count']) for a in cs])
             return Response({'detail': d})
 
+    @decorators.action(['post'], detail=False, permission_classes=[])
+    def log(self, request):
+        from .stores import ObjectLog
+        ol = ObjectLog()
+        if request.method == 'POST':
+            model = request.data.get('model')
+            id = request.data.get('id')
+            metics = request.data.get('metics')
+            ol.log(model, id, metics=metics)
+            return Response({'detail': 'ok'}, status=status.HTTP_201_CREATED)
+
+    @decorators.action(['post'], detail=False, permission_classes=[])
+    def user(self, request):
+        from .stores import ObjectLog
+        ol = ObjectLog()
+        if request.method == 'POST':
+            model = 'auth.user'
+            id = request.user.id
+            metics = request.data.get('metics')
+            delta = request.data.get('delta', 1)
+            ol.log(model, id, metics=metics, delta=delta)
+            return Response({'detail': 'ok'}, status=status.HTTP_201_CREATED)
+
 
 @register_raw(path='dailylog/user')
 class UserCounterSet(viewsets.ViewSet):
 
-    @decorators.action(['get', 'post'], detail={}, permission_classes=[])
+    @decorators.action(['get', 'post'], detail=False, permission_classes=[])
     def count(self, request):
         uid = request.user.id
         if not uid:
@@ -130,3 +153,37 @@ class UserCounterSet(viewsets.ViewSet):
             qs = request.query_params
             mt = qs.get('metics')
             return Response({mt: ul.get(request.user.id, metics=mt)})
+
+    @decorators.action(['post'], detail=False, permission_classes=[])
+    def log(self, request):
+        uid = request.user.id
+        if not uid:
+            return Response({'detail': 0})
+        from .stores import UserLog
+        st = UserLog()
+        if request.method == 'POST':
+            ds = request.data
+            metics = ds.get('metics')
+            delta = ds.get('delta', 1)
+            r = st.log(uid, metics=metics, delta=delta)
+            from .signals import user_log
+            user_log.send_robust(sender=self, user_id=uid, metics=metics, delta=delta)
+            return Response({'detail': r}, status=status.HTTP_201_CREATED)
+
+
+    @decorators.action(['post'], detail=False, permission_classes=[])
+    def daily(self, request):
+        uid = request.user.id
+        if not uid:
+            return Response({'detail': 0})
+        from .stores import DailyLog
+        st = DailyLog()
+        if request.method == 'POST':
+            ds = request.data
+            metics = ds.get('metics')
+            model = ds.get('model')
+            delta = ds.get('delta', 1)
+            r = st.log(uid, model, metics=metics, delta=delta)
+            from .signals import user_log
+            user_log.send_robust(sender=self, user_id=uid, model=model, metics=metics, delta=delta)
+            return Response({'detail': r}, status=status.HTTP_201_CREATED)
