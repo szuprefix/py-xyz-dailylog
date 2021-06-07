@@ -20,7 +20,7 @@ class DailyLogViewSet(UserApiMixin, viewsets.ModelViewSet):
         'the_date': ['exact', 'gte', 'lte', 'range'],
     }
 
-    @decorators.list_route(['POST'])
+    @decorators.action(['POST'], detail=False)
     def write(self, request):
         user = request.user
         for k, v in request.data.iteritems():
@@ -41,7 +41,7 @@ class StatViewSet(viewsets.ReadOnlyModelViewSet):
         'owner_id': ['exact', 'isnull']
     }
 
-    @decorators.list_route(['get'])
+    @decorators.action(['get'], detail=False)
     def stat(self, request):
         return do_rest_stat_action(self, stats.stats_stat)
 
@@ -61,7 +61,7 @@ class RecordViewSet(viewsets.ReadOnlyModelViewSet):
         'owner_group': ['exact', ]
     }
 
-    @decorators.list_route(['get'])
+    @decorators.action(['get'], detail=False)
     def stat(self, request):
         return do_rest_stat_action(self, stats.stats_record)
 
@@ -81,12 +81,12 @@ class PerformanceViewSet(viewsets.ModelViewSet):
     }
     search_fields = ['owner_name', 'user_name', 'user_group', 'owner_group']
 
-    @decorators.list_route(['GET'])
+    @decorators.action(['GET'], detail=False)
     def read(self, request):
         p = helper.get_performance(request.query_params, request.user)
         return Response(serializers.PerformanceSerializer(instance=p).data)
 
-    @decorators.list_route(['POST'])
+    @decorators.action(['POST'], detail=False)
     def write(self, request):
         p = helper.save_performance(request.data, request.user)
         return Response(serializers.PerformanceSerializer(instance=p).data)
