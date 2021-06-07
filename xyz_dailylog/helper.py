@@ -42,7 +42,7 @@ def gen_dailylog_records(the_date):
             try:
                 models.Record.objects.update_or_create(the_date=the_date, owner_type=ct, owner_id=mid, metics=mt, user=l.user,
                                                        defaults=dict(value=v))
-            except Exception, e:
+            except Exception as e:
                 import traceback
                 log.error('gen_dailylog_records(%s) error: %s', the_date, traceback.format_exc())
 
