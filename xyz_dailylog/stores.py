@@ -29,6 +29,14 @@ class UserLog(Store):
         a = self.collection.find_one({'id': int(id)}, {metics: 1})
         return access(a, metics) if a else None
 
+    def max(self, id, metics='online_time', value=1):
+        a = self.collection.find_one({'id': int(id)}, {metics: 1})
+        old = access(a, metics) if a else None
+        if old is None or old < value:
+            self.upsert({'id': int(id)}, {metics: int(value)})
+            return value
+        return old
+
     def get(self, id, metics='online_time'):
         d = self.collection.find_one({'id': id}, {metics: 1})
         return access(d, metics) if d else None

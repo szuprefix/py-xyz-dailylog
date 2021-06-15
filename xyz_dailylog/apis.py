@@ -138,6 +138,45 @@ class ObjectViewSet(viewsets.ViewSet):
 @register_raw(path='dailylog/user')
 class UserCounterSet(viewsets.ViewSet):
 
+    @decorators.action(['get'], detail=False, permission_classes=[])
+    def objects(self, request):
+        qs = request.query_params
+        ct = qs.get('content_type')
+        ids = qs.get('ids').split(',')
+        from .stores import UserLog
+        ul = UserLog()
+        fs = dict([('%s.%s' % (ct, id), 1) for id in ids])
+        fs['_id'] = 0
+        rs = ul.collection.find_one({'id': int(request.user.id)}, fs)
+        return Response({'objects': rs.get(ct, [])})
+
+    @decorators.action(['post'], detail=False, permission_classes=[])
+    def add_to_set(self, request):
+        uid = request.user.id
+        if not uid:
+            return Response({'detail': 0})
+        from .stores import UserLog
+        ul = UserLog()
+        ds = request.data
+        r = ul.add_to_set({'id': int(request.user.id)}, ds.get('setvalue'))
+        return Response({'detail': r}, status=status.HTTP_201_CREATED)
+
+    @decorators.action(['get', 'post'], detail=False, permission_classes=[])
+    def max(self, request):
+        uid = request.user.id
+        if not uid:
+            return Response({'detail': 0})
+        from .stores import UserLog
+        ul = UserLog()
+        if request.method == 'POST':
+            ds = request.data
+            r = ul.max(request.user.id, metics=ds.get('metics'), value=int(ds.get('value', 1)))
+            return Response({'detail': r}, status=status.HTTP_201_CREATED)
+        else:
+            qs = request.query_params
+            mt = qs.get('metics')
+            return Response({mt: ul.get(request.user.id, metics=mt)})
+
     @decorators.action(['get', 'post'], detail=False, permission_classes=[])
     def count(self, request):
         uid = request.user.id
@@ -169,7 +208,6 @@ class UserCounterSet(viewsets.ViewSet):
             from .signals import user_log
             user_log.send_robust(sender=self, user_id=uid, metics=metics, delta=delta)
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
-
 
     @decorators.action(['post'], detail=False, permission_classes=[])
     def daily(self, request):
