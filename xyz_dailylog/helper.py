@@ -9,7 +9,7 @@ log = getLogger('django')
 def do_daily_stat(the_date):
     d = {}
     for l in models.DailyLog.objects.filter(the_date=the_date):
-        for k, v in l.context.iteritems():
+        for k, v in l.context.items():
             ps = k.split('.')
             app, model, mid, category, metric = ps
             am = (app, model)
@@ -21,10 +21,10 @@ def do_daily_stat(the_date):
             r2['us'].add(l.user.id)
             r2['u'] = len(r2['us'])
             r2['v'] += v
-    for am, dam in d.iteritems():
+    for am, dam in d.items():
         ct = ContentType.objects.get_by_natural_key(am[0], am[1])
-        for oid, doid in dam.iteritems():
-            for mt, dmt in doid.iteritems():
+        for oid, doid in dam.items():
+            for mt, dmt in doid.items():
                 models.Stat.objects.update_or_create(the_date=the_date, owner_type=ct, owner_id=oid, metics=mt,
                                                       defaults=dict(value=dmt['v'], user_count=dmt['u']))
     return d
@@ -32,7 +32,7 @@ def do_daily_stat(the_date):
 
 def gen_dailylog_records(the_date):
     for l in models.DailyLog.objects.filter(the_date=the_date):
-        for k, v in l.context.iteritems():
+        for k, v in l.context.items():
             ps = k.split('.')
             if len(ps) != 5:
                 continue

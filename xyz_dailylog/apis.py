@@ -23,7 +23,7 @@ class DailyLogViewSet(UserApiMixin, viewsets.ModelViewSet):
     @decorators.action(['POST'], detail=False)
     def write(self, request):
         user = request.user
-        for k, v in request.data.iteritems():
+        for k, v in request.data.items():
             log, created = models.DailyLog.objects.get_or_create(user=user, the_date=k)
             log.context.update(v)
             log.save()

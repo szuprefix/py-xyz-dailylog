@@ -19,7 +19,7 @@ class DailyLog(models.Model):
     create_time = models.DateTimeField("创建时间", auto_now_add=True, db_index=True)
     update_time = models.DateTimeField("创建时间", auto_now=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s dailylog @ %s' % (self.user, self.the_date.isoformat())
 
 class Stat(models.Model):
@@ -96,7 +96,7 @@ class Performance(models.Model):
     create_time = models.DateTimeField("创建时间", auto_now_add=True)
     update_time = models.DateTimeField("更新时间", auto_now=True, db_index=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s by %s" % (self.owner_name, self.user_name)
 
     def save(self, **kwargs):
