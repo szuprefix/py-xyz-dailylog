@@ -5,7 +5,7 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.auth.models import User
 from xyz_util import modelutils
-
+from six import text_type
 
 class DailyLog(models.Model):
     class Meta:
@@ -61,11 +61,11 @@ class Record(models.Model):
         if not self.user_name:
             self.user_name = self.user.get_full_name()
         if not self.user_group:
-            self.user_group = unicode(self.user.as_school_student.classes.first()) if hasattr(self.user, 'as_school_student') else ''
+            self.user_group = text_type(self.user.as_school_student.classes.first()) if hasattr(self.user, 'as_school_student') else ''
         if not self.owner_name:
-            self.owner_name = unicode(self.owner)
+            self.owner_name = text_type(self.owner)
         if not self.owner_group:
-            self.owner_group = unicode(self.owner.owner) if hasattr(self.owner, 'owner') else ''
+            self.owner_group = text_type(self.owner.owner) if hasattr(self.owner, 'owner') else ''
         return super(Record, self).save(**kwargs)
 
 
@@ -103,10 +103,10 @@ class Performance(models.Model):
         self.user_name = self.user.get_full_name()
         if hasattr(self.user, 'as_school_student'):
             student = self.user.as_school_student
-            self.user_group = unicode(student.classes.first())
+            self.user_group = text_type(student.classes.first())
             self.detail['user_number'] = student.number
-        self.owner_name = unicode(self.owner)
-        self.owner_group = unicode(self.owner.owner) if hasattr(self.owner, 'owner') else ''
+        self.owner_name = text_type(self.owner)
+        self.owner_group = text_type(self.owner.owner) if hasattr(self.owner, 'owner') else ''
         d = self.detail
         self.target = d.get('target', 0)
         ps = d.get('parts', [])
