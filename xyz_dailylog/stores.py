@@ -37,6 +37,10 @@ class UserLog(Store):
             return value
         return old
 
+    def set(self, id, metics='online_time', value=1):
+        self.upsert({'id': int(id)}, {metics: int(value)})
+        return {metics: int(value)}
+
     def get(self, id, metics='online_time'):
         d = self.collection.find_one({'id': id}, {metics: 1})
         return access(d, metics) if d else None

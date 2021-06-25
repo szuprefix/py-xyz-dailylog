@@ -108,7 +108,7 @@ class ObjectViewSet(viewsets.ViewSet):
             model = request.query_params.get('model')
             ids = [int(a.strip()) for a in request.query_params.get('ids').split(',') if a.strip()]
             cs = ol.find(model, ids)
-            d = dict([(a['_id'], a['count']) for a in cs])
+            d = dict([(a['_id'], a.get('count', 0)) for a in cs])
             return Response({'detail': d})
 
     @decorators.action(['post'], detail=False, permission_classes=[])
@@ -148,7 +148,7 @@ class UserCounterSet(viewsets.ViewSet):
         fs = dict([('%s.%s' % (ct, id), 1) for id in ids])
         fs['_id'] = 0
         rs = ul.collection.find_one({'id': int(request.user.id)}, fs)
-        return Response({'objects': rs.get(ct, [])})
+        return Response({'objects': rs and rs.get(ct) or []})
 
     @decorators.action(['post'], detail=False, permission_classes=[])
     def add_to_set(self, request):
@@ -176,6 +176,19 @@ class UserCounterSet(viewsets.ViewSet):
             qs = request.query_params
             mt = qs.get('metics')
             return Response({mt: ul.get(request.user.id, metics=mt)})
+
+    @decorators.action(['get', 'post'], detail=False, permission_classes=[])
+    def set(self, request):
+        uid = request.user.id
+        if not uid:
+            return Response({'detail': 0})
+        from .stores import UserLog
+        ul = UserLog()
+        if request.method == 'POST':
+            ds = request.data
+            r = ul.set(request.user.id, metics=ds.get('metics'), value=int(ds.get('value', 1)))
+            return Response({'detail': r}, status=status.HTTP_201_CREATED)
+
 
     @decorators.action(['get', 'post'], detail=False, permission_classes=[])
     def count(self, request):
