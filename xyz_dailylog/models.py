@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from xyz_util import modelutils
 from six import text_type
 
+
 class DailyLog(models.Model):
     class Meta:
         verbose_name_plural = verbose_name = "日志"
@@ -22,6 +23,7 @@ class DailyLog(models.Model):
     def __str__(self):
         return '%s dailylog @ %s' % (self.user, self.the_date.isoformat())
 
+
 class Stat(models.Model):
     class Meta:
         verbose_name_plural = verbose_name = "统计"
@@ -36,6 +38,7 @@ class Stat(models.Model):
     value = models.PositiveIntegerField('数值', default=0)
     user_count = models.PositiveIntegerField('用户数', default=0)
     update_time = models.DateTimeField("创建时间", auto_now=True)
+
 
 class Record(models.Model):
     class Meta:
@@ -56,18 +59,20 @@ class Record(models.Model):
     user_group = models.CharField('用户分组', max_length=256, blank=True, default='')
     value = models.PositiveIntegerField('数值', default=0)
 
-
     def save(self, **kwargs):
         if not self.user_name:
             self.user_name = self.user.get_full_name()
         if not self.user_group:
-            self.user_group = text_type(self.user.as_school_student.classes.first()) if hasattr(self.user, 'as_school_student') else ''
+            self.user_group = ''
+            if hasattr(self.user, 'as_school_student'):
+                self.user_group = text_type(self.user.as_school_student.classes.first())
         if not self.owner_name:
             self.owner_name = text_type(self.owner)
         if not self.owner_group:
-            self.owner_group = text_type(self.owner.owner) if hasattr(self.owner, 'owner') else ''
+            self.owner_group = ''
+            if hasattr(self.owner, 'owner') :
+                self.owner_group = text_type(self.owner.owner)
         return super(Record, self).save(**kwargs)
-
 
 
 class Performance(models.Model):
@@ -111,8 +116,10 @@ class Performance(models.Model):
         self.target = d.get('target', 0)
         ps = d.get('parts', [])
         self.accomplish = len(set(ps))
+        if self.accomplish > self.target:
+            self.accomplish = self.target
         self.accumulate = len(ps)
-        self.percent = int(self.accomplish*100/self.target) if self.target else 0
+        self.percent = int(self.accomplish * 100 / self.target) if self.target else 0
         self.score = d.get('score')
         self.times = d.get('times', 0)
         return super(Performance, self).save(**kwargs)

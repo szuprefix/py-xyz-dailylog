@@ -13,7 +13,7 @@ class ObjectLog(Store):
     timeout = 1000
 
     def log(self, model, id, metics={'views': 1}):
-        vs = dict([(k, int(v))for k, v in metics.items()])
+        vs = dict([(k, int(v)) for k, v in metics.items()])
         self.inc({'model': model, 'id': int(id)}, vs)
 
     def find(self, model, ids, metics='views'):
@@ -44,6 +44,11 @@ class UserLog(Store):
     def get(self, id, metics='online_time'):
         d = self.collection.find_one({'id': id}, {metics: 1})
         return access(d, metics) if d else None
+
+    def list(self, id, metic_list=[]):
+        if isinstance(metic_list, (tuple, list)):
+            metic_list = dict([(a, 1) for a in metic_list])
+        return self.collection.find_one({'id': id}, metic_list)
 
 
 class DailyLog(Store):
