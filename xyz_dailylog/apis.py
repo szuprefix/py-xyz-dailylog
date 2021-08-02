@@ -7,7 +7,7 @@ from rest_framework.response import Response
 __author__ = 'denishuang'
 
 from . import models, serializers, stats, helper
-from rest_framework import viewsets, decorators, status
+from rest_framework import viewsets, decorators, status, permissions
 from xyz_restful.decorators import register, register_raw
 
 
@@ -137,20 +137,28 @@ class ObjectViewSet(viewsets.ViewSet):
 
 @register_raw(path='dailylog/user')
 class UserCounterSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
 
-    @decorators.action(['get'], detail=False, permission_classes=[])
+    @decorators.action(['get', 'post'], detail=False)
     def objects(self, request):
-        qs = request.query_params
-        ct = qs.get('content_type')
-        ids = qs.get('ids').split(',')
         from .stores import UserLog
         ul = UserLog()
-        fs = dict([('%s.%s' % (ct, id), 1) for id in ids])
-        fs['_id'] = 0
-        rs = ul.collection.find_one({'id': int(request.user.id)}, fs)
-        return Response({'objects': rs and rs.get(ct) or []})
+        search = {'id': int(request.user.id)}
+        if request.method == 'POST':
+            fs = dict([(a, 1) for a in request.data.get('objects')])
+            fs['_id'] = 0
+            rs = ul.collection.find_one(search, fs)
+            return Response({'objects': rs or {}})
+        else:
+            qs = request.query_params
+            ct = qs.get('content_type')
+            ids = qs.get('ids').split(',')
+            fs = dict([('%s.%s' % (ct, id), 1) for id in ids])
+            fs['_id'] = 0
+            rs = ul.collection.find_one({'id': int(request.user.id)}, fs)
+            return Response({'objects': rs and rs.get(ct) or []})
 
-    @decorators.action(['post'], detail=False, permission_classes=[])
+    @decorators.action(['post'], detail=False)
     def add_to_set(self, request):
         uid = request.user.id
         if not uid:
@@ -161,7 +169,7 @@ class UserCounterSet(viewsets.ViewSet):
         r = ul.add_to_set({'id': int(request.user.id)}, ds.get('setvalue'))
         return Response({'detail': r}, status=status.HTTP_201_CREATED)
 
-    @decorators.action(['get', 'post'], detail=False, permission_classes=[])
+    @decorators.action(['get', 'post'], detail=False)
     def max(self, request):
         uid = request.user.id
         if not uid:
@@ -177,7 +185,7 @@ class UserCounterSet(viewsets.ViewSet):
             mt = qs.get('metics')
             return Response({mt: ul.get(request.user.id, metics=mt)})
 
-    @decorators.action(['get', 'post'], detail=False, permission_classes=[])
+    @decorators.action(['get', 'post'], detail=False)
     def set(self, request):
         uid = request.user.id
         if not uid:
@@ -190,7 +198,7 @@ class UserCounterSet(viewsets.ViewSet):
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
 
 
-    @decorators.action(['get', 'post'], detail=False, permission_classes=[])
+    @decorators.action(['get', 'post'], detail=False)
     def count(self, request):
         uid = request.user.id
         if not uid:
@@ -206,7 +214,7 @@ class UserCounterSet(viewsets.ViewSet):
             mt = qs.get('metics')
             return Response({mt: ul.get(request.user.id, metics=mt)})
 
-    @decorators.action(['post'], detail=False, permission_classes=[])
+    @decorators.action(['post'], detail=False)
     def log(self, request):
         uid = request.user.id
         if not uid:
@@ -222,7 +230,7 @@ class UserCounterSet(viewsets.ViewSet):
             user_log.send_robust(sender=self, user_id=uid, metics=metics, delta=delta)
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
 
-    @decorators.action(['post'], detail=False, permission_classes=[])
+    @decorators.action(['post'], detail=False)
     def daily(self, request):
         uid = request.user.id
         if not uid:
