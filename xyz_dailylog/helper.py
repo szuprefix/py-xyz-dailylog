@@ -25,8 +25,16 @@ def do_daily_stat(the_date):
         ct = ContentType.objects.get_by_natural_key(am[0], am[1])
         for oid, doid in dam.items():
             for mt, dmt in doid.items():
-                models.Stat.objects.update_or_create(the_date=the_date, owner_type=ct, owner_id=oid, metics=mt,
-                                                      defaults=dict(value=dmt['v'], user_count=dmt['u']))
+                models.Stat.objects.update_or_create(
+                    the_date=the_date,
+                    owner_type=ct,
+                    owner_id=oid,
+                    metics=mt,
+                    defaults=dict(
+                        value=dmt['v'],
+                        user_count=dmt['u']
+                    )
+                )
     return d
 
 
@@ -40,8 +48,16 @@ def gen_dailylog_records(the_date):
             mt = "%s.%s" % (category, metric)
             ct = ContentType.objects.get_by_natural_key(app, model)
             try:
-                models.Record.objects.update_or_create(the_date=the_date, owner_type=ct, owner_id=mid, metics=mt, user=l.user,
-                                                       defaults=dict(value=v))
+                models.Record.objects.update_or_create(
+                    the_date=the_date,
+                    owner_type=ct,
+                    owner_id=mid,
+                    metics=mt,
+                    user=l.user,
+                    defaults=dict(
+                        value=v
+                    )
+                )
             except Exception as e:
                 import traceback
                 log.error('gen_dailylog_records(%s) error: %s', the_date, traceback.format_exc())

@@ -63,3 +63,12 @@ class DailyLog(Store):
         self.inc(rk, {metics: delta})
         # a = self.collection.find_one(rk, {metics: 1})
         # r = access(a, metics)
+
+
+class UserDailyLog(Store):
+    name = 'user_daily_log'
+
+
+class ObjectDailyLog(Store):
+    name = 'object_daily_log'
+

@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 from __future__ import division, unicode_literals
+
+from six import text_type
 from xyz_restful.mixins import UserApiMixin
 from xyz_util.statutils import do_rest_stat_action, using_stats_db
 from rest_framework.response import Response
@@ -178,7 +180,12 @@ class UserCounterSet(viewsets.ViewSet):
         ul = UserLog()
         if request.method == 'POST':
             ds = request.data
-            r = ul.max(request.user.id, metics=ds.get('metics'), value=int(ds.get('value', 1)))
+            metics=ds.get('metics')
+            if isinstance(metics, text_type):
+                metics = {metics: int(ds.get('value', 1))}
+            r = {}
+            for k, v in metics.items():
+                r[k] = ul.max(request.user.id, metics=k, value=v)
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
         else:
             qs = request.query_params
