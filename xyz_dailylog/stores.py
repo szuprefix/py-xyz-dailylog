@@ -72,3 +72,7 @@ class UserDailyLog(Store):
 class ObjectDailyLog(Store):
     name = 'object_daily_log'
 
+
+class Record(Store):
+    name = 'dailylog_record'
+

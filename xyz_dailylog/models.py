@@ -52,7 +52,7 @@ class Record(models.Model):
     owner = GenericForeignKey('owner_type', 'owner_id')
     owner_name = models.CharField('属主名称', max_length=256, blank=True, default='')
     owner_group = models.CharField('属主分组', max_length=256, blank=True, default='')
-    metics = models.CharField('指标', max_length=128)
+    metics = models.CharField('指标', max_length=128, db_index=True)
     user = models.ForeignKey(User, verbose_name=User._meta.verbose_name, related_name="dailylog_records",
                              on_delete=models.PROTECT)
     user_name = models.CharField('用户姓名', max_length=256, blank=True, default='')
