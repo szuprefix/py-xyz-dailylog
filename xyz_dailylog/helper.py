@@ -6,7 +6,7 @@ from six import text_type
 
 from . import models
 from logging import getLogger
-
+from time import sleep
 log = getLogger('django')
 
 
@@ -42,14 +42,42 @@ def do_daily_stat(the_date):
     return d
 
 
-def gen_dailylog_records(the_date):
+def save_record_by_rdb(r):
+    try:
+        models.Record.objects.update_or_create(
+            the_date=r['the_date'],
+            owner_type_id=r['owner_type_id'],
+            owner_id=r['owner_id'],
+            metics=r['metics'],
+            user_id=r['user_id'],
+            defaults=r
+        )
+    except Exception as e:
+        import traceback
+        log.error('save_record_by_rdb(%s) error: %s', r, traceback.format_exc())
+
+
+def save_record_by_mongo(r):
+    from .stores import Record
+    rst = Record()
+    cond = dict(
+        the_date=r['the_date'],
+        owner_type_id=r['owner_type_id'],
+        owner_id=r['owner_id'],
+        metics=r['metics'],
+        user_id=r['user_id']
+    )
+    rst.upsert(cond, r)
+
+
+def gen_dailylog_records(the_date, process=save_record_by_rdb):
     ocache = {}
     for l in models.DailyLog.objects.filter(the_date=the_date):
         user = l.user
         user_name = user.get_full_name()
         user_group = ''
         if hasattr(user, 'as_school_student'):
-            user_group = text_type(user.as_school_student.classes.first())
+            user_group = ','.join(user.as_school_student.classes.values_list('name', flat=True))
         for k, v in l.context.items():
             ps = k.split('.')
             if len(ps) != 5:
@@ -58,76 +86,25 @@ def gen_dailylog_records(the_date):
             mt = "%s.%s" % (category, metric)
             odata = ocache.setdefault((mt, mid), {})
             if not odata:
-                ct = odata['owner_type'] = ContentType.objects.get_by_natural_key(app, model)
+                ct = ContentType.objects.get_by_natural_key(app, model)
+                odata['owner_type_id'] = ct.id
                 owner = ct.get_object_for_this_type(pk=mid)
                 odata['owner_name'] = text_type(owner)
                 odata['owner_group'] = ''
                 if hasattr(owner, 'owner'):
                     odata['owner_group'] = text_type(owner.owner)
-            # else:
-            #     print('cached', len(odata))
-            try:
-                models.Record.objects.update_or_create(
-                    the_date=the_date,
-                    owner_type=odata['owner_type'],
-                    owner_id=mid,
-                    metics=mt,
-                    user=l.user,
-                    defaults=dict(
-                        value=v,
-                        user_group=user_group,
-                        user_name=user_name,
-                        **odata
-                    )
-                )
-            except Exception as e:
-                import traceback
-                log.error('gen_dailylog_records(%s) error: %s', the_date, traceback.format_exc())
-
-
-def gen_dailylog_records_to_store(the_date):
-    from .stores import Record
-    rst = Record()
-    for l in models.DailyLog.objects.filter(the_date=the_date):
-        user = l.user
-        user_name = user.get_full_name()
-        user_group = ''
-        if hasattr(user, 'as_school_student'):
-            user_group = text_type(user.as_school_student.classes.first())
-        for k, v in l.context.items():
-            ps = k.split('.')
-            if len(ps) != 5:
-                continue
-            app, model, mid, category, metric = ps
-            mt = "%s.%s" % (category, metric)
-            ct = ContentType.objects.get_by_natural_key(app, model)
-            owner = ct.get_object_for_this_type(pk=mid)
-            owner_name = text_type(owner)
-            owner_group = ''
-            if hasattr(owner, 'owner'):
-                owner_group = text_type(owner.owner)
-            try:
-                from .stores import UserLog
-                rst.upsert(
-                    dict(
-                        the_date=the_date,
-                        owner_type=ct.id,
-                        owner_id=mid,
-                        metics=mt,
-                        user=user.id,
-                    ),
-                    dict(
-                        value=v,
-                        owner_name=owner_name,
-                        owner_group=owner_group,
-                        user_group=user_group,
-                        user_name=user_name
-                    )
-                )
-            except Exception as e:
-                import traceback
-                log.error('gen_dailylog_records_to_store(%s) error: %s', the_date, traceback.format_exc())
-
+            record = dict(
+                the_date=the_date,
+                owner_id=mid,
+                metics=mt,
+                user_id=user.id,
+                value=v,
+                user_group=user_group,
+                user_name=user_name,
+                **odata
+            )
+            process(record)
+            sleep(0.05)
 
 def save_performance(d, user):
     ct = ContentType.objects.get(app_label=d['app'], model=d['model'])

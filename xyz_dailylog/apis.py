@@ -9,7 +9,7 @@ from rest_framework.response import Response
 __author__ = 'denishuang'
 
 from . import models, serializers, stats, helper
-from rest_framework import viewsets, decorators, status, permissions
+from rest_framework import viewsets, decorators, status, permissions, exceptions
 from xyz_restful.decorators import register, register_raw
 
 
@@ -78,10 +78,12 @@ class PerformanceViewSet(viewsets.ModelViewSet):
         'owner_id': ['exact', 'isnull', 'in'],
         'owner_type': ['exact', ],
         'user': ['exact', ],
+        'user_name': ['exact', ],
+        'owner_name': ['exact', ],
         'user_group': ['exact', ],
         'owner_group': ['exact', ]
     }
-    search_fields = ['owner_name', 'user_name', 'user_group', 'owner_group']
+    search_fields = []
 
     @decorators.action(['GET'], detail=False)
     def read(self, request):
@@ -214,7 +216,14 @@ class UserCounterSet(viewsets.ViewSet):
         ul = UserLog()
         if request.method == 'POST':
             ds = request.data
-            r = ul.log(request.user.id, metics=ds.get('metics'), delta=ds.get('delta', 1))
+            mt = ds.get('metics')
+            if not mt:
+                raise exceptions.ValidationError('metics is null')
+            try:
+                delta = int(ds.get('delta', 1))
+            except:
+                raise exceptions.ValidationError('data format invalid')
+            r = ul.log(request.user.id, metics=mt, delta=delta)
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
         else:
             qs = request.query_params
