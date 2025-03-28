@@ -182,7 +182,7 @@ class UserCounterSet(viewsets.ViewSet):
         ul = UserLog()
         if request.method == 'POST':
             ds = request.data
-            metics=ds.get('metics')
+            metics = ds.get('metics')
             if isinstance(metics, text_type):
                 metics = {metics: int(ds.get('value', 1))}
             r = {}
@@ -206,7 +206,6 @@ class UserCounterSet(viewsets.ViewSet):
             r = ul.set(request.user.id, metics=ds.get('metics'), value=int(ds.get('value', 1)))
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
 
-
     @decorators.action(['get', 'post'], detail=False)
     def count(self, request):
         uid = request.user.id
@@ -223,7 +222,9 @@ class UserCounterSet(viewsets.ViewSet):
                 delta = int(ds.get('delta', 1))
             except:
                 raise exceptions.ValidationError('data format invalid')
-            r = ul.log(request.user.id, metics=mt, delta=delta)
+            r = ul.log(uid, metics=mt, delta=delta)
+            from .helper import save_user_daily
+            save_user_daily(uid, event_sender=self, model='auth.user', metics=mt, delta=delta)
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
         else:
             qs = request.query_params
@@ -243,10 +244,10 @@ class UserCounterSet(viewsets.ViewSet):
             delta = ds.get('delta', 1)
             r = st.log(uid, metics=metics, delta=delta)
             from .signals import user_log
-            user_log.send_robust(sender=self, user_id=uid, metics=metics, delta=delta)
+            user_log.send_robust(sender=self, user_id=uid, metics=metics, delta=delta, event_sender=self)
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
 
-    @decorators.action(['post'], detail=False)
+    @decorators.action(['post', 'get'], detail=False)
     def daily(self, request):
         uid = request.user.id
         if not uid:
@@ -255,10 +256,42 @@ class UserCounterSet(viewsets.ViewSet):
         st = DailyLog()
         if request.method == 'POST':
             ds = request.data
-            metics = ds.get('metics')
-            model = ds.get('model')
-            delta = ds.get('delta', 1)
-            r = st.log(uid, model, metics=metics, delta=delta)
-            from .signals import user_log
-            user_log.send_robust(sender=self, user_id=uid, model=model, metics=metics, delta=delta)
+            from .helper import save_user_daily
+            r = save_user_daily(uid, event_sender=self, **ds)
+            # metics = ds.get('metics')
+            # model = ds.get('model')
+            # delta = ds.get('delta', 1)
+            # r = st.log(uid, model, metics=metics, delta=delta)
+            # from .signals import user_log
+            # user_log.send_robust(sender=self, user_id=uid, model=model, metics=metics, delta=delta)
             return Response({'detail': r}, status=status.HTTP_201_CREATED)
+        else:
+            from xyz_util.dateutils import format_the_date
+            from xyz_util.mongoutils import drop_id_field
+            dt = format_the_date().isoformat()
+            rs = list(drop_id_field(st.find(dict(user=uid, date=dt))))
+            return Response(dict(result=rs))
+
+
+@register_raw(path='dailylog/history')
+class HistoryViewSet(viewsets.ViewSet):
+    permission_classes = []
+
+    @decorators.action(['get'], detail=False)
+    def daily(self, request):
+        from xyz_util.dateutils import format_the_date, get_next_date
+        from xyz_util.mongoutils import drop_id_field
+        from .stores import DailyLog
+        st = DailyLog()
+        qs = request.GET
+        dt = qs.get('the_date') or get_next_date(None, -7).isoformat()
+        print(dt)
+        filter = dict(date__gt=dt)
+        rs = list(
+            st.group_by(
+                ['date', 'user'],
+                filter=filter,
+                aggregate=['answer_right_count', 'online_time'],
+            )
+        )
+        return Response(dict(result=rs))

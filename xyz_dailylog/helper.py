@@ -132,3 +132,11 @@ def log_views(model, id):
     except:
         import traceback
         log.error('dailylog log_views error: %s', traceback.format_exc())
+
+def save_user_daily(user_id, metics='online', model='auth.user', event_sender=None, delta=1):
+    from .stores import DailyLog
+    st = DailyLog()
+    r = st.log(user_id, model, metics=metics, delta=delta)
+    from .signals import user_log
+    user_log.send_robust(sender=event_sender, user_id=user_id, model=model, metics=metics, delta=delta)
+    return r
