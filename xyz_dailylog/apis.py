@@ -284,14 +284,19 @@ class HistoryViewSet(viewsets.ViewSet):
         from .stores import DailyLog
         st = DailyLog()
         qs = request.GET
-        dt = qs.get('the_date') or get_next_date(None, -7).isoformat()
-        print(dt)
-        filter = dict(date__gt=dt)
+        bd = qs.get('begin_date') or get_next_date(None, -7).isoformat()
+        ed = qs.get('end_date') or format_the_date().isoformat()
+        agg = qs.get('agg', '')
+        if not agg:
+            agg = {'count': {'$sum': 1}}
+        else:
+            agg = agg.split(',')
+        filter = dict(date__gte=bd, date__lte=ed)
         rs = list(
             st.group_by(
                 ['date', 'user'],
                 filter=filter,
-                aggregate=['answer_right_count', 'online_time'],
+                aggregate=agg,
             )
         )
         return Response(dict(result=rs))
