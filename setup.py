@@ -5,7 +5,7 @@ import sys
 
 setup(
     name="xyz-dailylog",
-    version="0.2.1",
+    version="0.3.0",
     author="szuprefix",
     author_email="szuprefix@126.com",
     description="dailylog",

@@ -24,10 +24,20 @@ class UserLog(Store):
     name = 'user_log'
     timeout = 1000
 
-    def log(self, id, metics='online_time', delta=1):
-        self.inc({'id': int(id)}, {metics: int(delta)})
-        a = self.collection.find_one({'id': int(id)}, {metics: 1})
-        return access(a, metics) if a else None
+    def log(self, id, metics='online_time', **kwargs):
+        if isinstance(metics, str):
+            delta = kwargs.get('delta', 1)
+            if isinstance(delta, string_types):
+                delta = int(delta)
+            metics = {metics: delta}
+        self.inc({'id': int(id)}, metics)
+        # self.inc({'id': int(id)}, {metics: int(delta)})
+        a = self.collection.find_one({'id': int(id)}, dict([(k, 1) for k in metics]))
+        if not a:
+            return None
+        a.pop('_id')
+        return a
+        # return access(a, metics) if a else None
 
     def max(self, id, metics='online_time', value=1):
         a = self.collection.find_one({'id': int(id)}, {metics: 1})
@@ -55,12 +65,15 @@ class DailyLog(Store):
     name = 'daily_log'
     timeout = 1000
 
-    def log(self, user, model, metics='done', the_date=None, delta=1):
+    def log(self, user, model, metics='done', the_date=None, **kwargs):
         d = format_the_date(the_date)
         rk = dict(user=user, model=model, date=d.isoformat())
-        if isinstance(delta, string_types):
-            delta = int(delta)
-        self.inc(rk, {metics: delta})
+        if isinstance(metics, str):
+            delta = kwargs.get('delta', 1)
+            if isinstance(delta, string_types):
+                delta = int(delta)
+            metics = {metics: delta}
+        self.inc(rk, metics)
         # a = self.collection.find_one(rk, {metics: 1})
         # r = access(a, metics)
 

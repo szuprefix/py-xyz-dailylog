@@ -17,7 +17,7 @@ from xyz_restful.decorators import register, register_raw
 class DailyLogViewSet(UserApiMixin, viewsets.ModelViewSet):
     queryset = models.DailyLog.objects.all()
     serializer_class = serializers.DailyLogSerializer
-    filter_fields = {
+    filterset_fields = {
         'id': ['in', 'exact'],
         'the_date': ['exact', 'gte', 'lte', 'range'],
     }
@@ -36,7 +36,7 @@ class DailyLogViewSet(UserApiMixin, viewsets.ModelViewSet):
 class StatViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = using_stats_db(models.Stat.objects.all())
     serializer_class = serializers.StatSerializer
-    filter_fields = {
+    filterset_fields = {
         'id': ['in', 'exact'],
         'the_date': ['exact', 'gte', 'lte', 'range'],
         'metics': ['exact'],
@@ -52,7 +52,7 @@ class StatViewSet(viewsets.ReadOnlyModelViewSet):
 class RecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = using_stats_db(models.Record.objects.all())
     serializer_class = serializers.RecordSerializer
-    filter_fields = {
+    filterset_fields = {
         'id': ['in', 'exact'],
         'the_date': ['exact', 'gte', 'lte', 'range'],
         'metics': ['exact'],
@@ -72,7 +72,7 @@ class RecordViewSet(viewsets.ReadOnlyModelViewSet):
 class PerformanceViewSet(viewsets.ModelViewSet):
     queryset = models.Performance.objects.all()
     serializer_class = serializers.PerformanceSerializer
-    filter_fields = {
+    filterset_fields = {
         'id': ['in', 'exact'],
         'update_time': ['exact', 'gte', 'lte', 'range'],
         'owner_id': ['exact', 'isnull', 'in'],
@@ -208,6 +208,7 @@ class UserCounterSet(viewsets.ViewSet):
 
     @decorators.action(['get', 'post'], detail=False)
     def count(self, request):
+        from .helper import save_user_daily
         uid = request.user.id
         if not uid:
             return Response({'detail': 0})
@@ -218,14 +219,22 @@ class UserCounterSet(viewsets.ViewSet):
             mt = ds.get('metics')
             if not mt:
                 raise exceptions.ValidationError('metics is null')
-            try:
-                delta = int(ds.get('delta', 1))
-            except:
-                raise exceptions.ValidationError('data format invalid')
-            r = ul.log(uid, metics=mt, delta=delta)
-            from .helper import save_user_daily
-            save_user_daily(uid, event_sender=self, model='auth.user', metics=mt, delta=delta)
-            return Response({'detail': r}, status=status.HTTP_201_CREATED)
+            if isinstance(mt, str):
+                mt = {mt: int(ds.get('delta', 1))}
+            # rs = {}
+            rs = ul.log(uid, metics=mt)
+            save_user_daily(uid, event_sender=self, model='auth.user', metics=mt)
+            # for m, v in mt.items():
+            #     r = ul.log(uid, metics=m, delta=v)
+            #     save_user_daily(uid, event_sender=self, model='auth.user', metics=m, delta=v)
+            #     rs[m] = r
+            # try:
+            #     delta = int(ds.get('delta', 1))
+            # except:
+            #     raise exceptions.ValidationError('data format invalid')
+
+
+            return Response({'detail': rs}, status=status.HTTP_201_CREATED)
         else:
             qs = request.query_params
             mt = qs.get('metics')
