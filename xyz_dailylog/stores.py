@@ -74,8 +74,11 @@ class DailyLog(Store):
                 delta = int(delta)
             metics = {metics: delta}
         self.inc(rk, metics)
-        # a = self.collection.find_one(rk, {metics: 1})
-        # r = access(a, metics)
+        a = self.collection.find_one(rk, dict([(k, 1) for k in metics]))
+        if not a:
+            return None
+        a.pop('_id')
+        return a
 
 
 class UserDailyLog(Store):

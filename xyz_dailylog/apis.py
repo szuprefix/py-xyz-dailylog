@@ -223,7 +223,7 @@ class UserCounterSet(viewsets.ViewSet):
                 mt = {mt: int(ds.get('delta', 1))}
             # rs = {}
             rs = ul.log(uid, metics=mt)
-            save_user_daily(uid, event_sender=self, model='auth.user', metics=mt)
+            daily=save_user_daily(uid, event_sender=self, model='auth.user', metics=mt)
             # for m, v in mt.items():
             #     r = ul.log(uid, metics=m, delta=v)
             #     save_user_daily(uid, event_sender=self, model='auth.user', metics=m, delta=v)
@@ -234,7 +234,7 @@ class UserCounterSet(viewsets.ViewSet):
             #     raise exceptions.ValidationError('data format invalid')
 
 
-            return Response({'detail': rs}, status=status.HTTP_201_CREATED)
+            return Response({'detail': dict(**rs, daily=daily)}, status=status.HTTP_201_CREATED)
         else:
             qs = request.query_params
             mt = qs.get('metics')
