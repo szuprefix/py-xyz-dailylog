@@ -136,7 +136,7 @@ def log_views(model, id):
 def save_user_daily(user_id, metics='online', model='auth.user', event_sender=None,**kwargs):
     from .stores import DailyLog
     st = DailyLog()
-    print(f'metics:{metics}')
+    # print(f'metics:{metics}')
     r = st.log(user_id, model, metics=metics, **kwargs)
     from .signals import user_log
     user_log.send_robust(sender=event_sender, user_id=user_id, model=model, metics=metics)
