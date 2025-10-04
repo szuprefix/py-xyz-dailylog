@@ -71,8 +71,11 @@ def save_record_by_mongo(r):
 
 
 def gen_dailylog_records(the_date, process=save_record_by_rdb):
+    from xyz_util.statutils import using_stats_db
     ocache = {}
-    for l in models.DailyLog.objects.filter(the_date=the_date):
+    qset = models.DailyLog.objects.filter(the_date=the_date)
+    qset = using_stats_db(qset)
+    for l in qset:
         user = l.user
         user_name = user.get_full_name()
         user_group = ''
