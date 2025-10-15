@@ -278,7 +278,7 @@ class UserCounterSet(viewsets.ViewSet):
             from xyz_util.dateutils import format_the_date
             from xyz_util.mongoutils import drop_id_field
             dt = format_the_date().isoformat()
-            rs = list(drop_id_field(st.find(dict(user=uid, date=dt))))
+            rs = list(drop_id_field(st.find(dict(user=uid, model='auth.user', date=dt))))
             return Response(dict(result=rs))
 
 
@@ -300,7 +300,7 @@ class HistoryViewSet(viewsets.ViewSet):
             agg = {'count': {'$sum': 1}}
         else:
             agg = agg.split(',')
-        filter = dict(date__gte=bd, date__lte=ed)
+        filter = dict(date__gte=bd, date__lte=ed, model='auth.user')
         rs = list(
             st.group_by(
                 ['date', 'user'],
